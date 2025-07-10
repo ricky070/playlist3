@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>🎵 페이지 내 유튜브 플레이리스트</title>
+  <style>
+    body { font-family: sans-serif; max-width: 900px; margin: 20px auto; }
+    input, button, select { padding: 8px; margin: 5px; font-size: 16px; }
+    ul { list-style: none; padding: 0; }
+    li { background: #f9f9f9; margin: 8px 0; padding: 8px; display: flex; align-items: center; border: 1px solid #ccc; border-radius: 6px; gap: 10px; }
+    .song-title { flex-grow: 1; color: blue; cursor: pointer; text-decoration: underline; }
+    img.thumbnail { width: 80px; height: 45px; object-fit: cover; border-radius: 4px; }
+    .controls button { margin-left: 4px; }
+    #playerContainer { text-align: center; margin-top: 20px; }
+    #currentSongTitle { font-weight: bold; margin-top: 10px; min-height: 1.5em; }
+    #playlistHeader { display: flex; align-items: center; gap: 10px; }
+  </style>
+</head>
+<body>
+  <h2>🎵 페이지 내 유튜브 플레이리스트</h2>
+
+  <div id="playlistHeader">
+    <select id="playlistSelect"></select>
+    <input type="text" id="newPlaylistName" placeholder="새 플레이리스트 이름">
+    <button onclick="createPlaylist()">➕ 생성</button>
+    <button onclick="deletePlaylist()">🗑 삭제</button>
+    <span id="playlistTitleDisplay"></span>
+    <button onclick="editTitle()">✏️ 수정</button>
+  </div>
+
+  <input type="text" id="urlInput" placeholder="유튜브 링크 또는 ID 입력" style="width: 100%;">
+  <button onclick="addSong()">🎶 추가</button>
+  <button onclick="selectAll(true)">☑ 전체 선택</button>
+  <button onclick="selectAll(false)">☐ 전체 해제</button>
+  <input type="number" id="repeatCount" min="1" value="1" style="width: 80px;">회 반복
+  <button onclick="playSelected()">▶ 선택 재생</button>
+
+  <ul id="playlist"></ul>
+
+  <div id="playerContainer">
+    <div id="player"></div>
+    <div id="currentSongTitle"></div>
+    <div>
+      <button onclick="prevSong()">⏮ 이전곡</button>
+      <button onclick="togglePlayPause()" id="playPauseBtn">⏵ 재생</button>
+      <button onclick="nextSong()">⏭ 다음곡</button>
+    </div>
+  </div>
+
+<script>
+let playlists = JSON.parse(localStorage.getItem('playlists') || '[]');
+let currentPlaylistIndex = 0;
+let playingList = [], currentPlayIndex = 0;
+let player, isPlaying = false;
+let repeatLimit = 1, currentRepeat = 0;
+
+function savePlaylists() {
+  localStorage.setItem('playlists', JSON.stringify(playlists));
+  renderPlaylistSelect();
+  renderSongs();
+}
+
+function renderPlaylistSelect() {
+  const select = document.getElementById('playlistSelect');
+  select.innerHTML = '';
+  playlists.forEach((p, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = p.title;
+    select.appendChild(opt);
+  });
+  select.value = currentPlaylistIndex;
+  document.getElementById('playlistTitleDisplay').textContent = `[→ ${playlists[currentPlaylistIndex]?.title || ''}]`;
+}
+
+function createPlaylist() {
+  const name = document.getElementById('newPlaylistName').value.trim();
+  if (!name) return alert('이름을 입력하세요');
+  playlists.push({ title: name, songs: [] });
+  currentPlaylistIndex = playlists.length - 1;
+  document.getElementById('newPlaylistName').value = '';
+  savePlaylists();
+}
+
+function deletePlaylist() {
+  if (playlists.length <= 1) return alert('최소 하나는 남겨야 합니다');
+  if (confirm('정말 삭제할까요?')) {
+    playlists.splice(currentPlaylistIndex, 1);
+    currentPlaylistIndex = 0;
+    savePlaylists();
+  }
+}
+
+function editTitle() {
+  const newTitle = prompt('새 제목:', playlists[currentPlaylistIndex].title);
+  if (newTitle) {
+    playlists[currentPlaylistIndex].title = newTitle;
+    savePlaylists();
+  }
+}
+
+document.getElementById('playlistSelect').onchange = (e) => {
+  currentPlaylistIndex = parseInt(e.target.value);
+  renderPlaylistSelect();
+  renderSongs();
+};
+
+async function addSong() {
+  const input = document.getElementById('urlInput');
+  const id = extractVideoId(input.value);
+  if (!id) return alert('잘못된 링크입니다');
+  const meta = await getYoutubeMeta(id);
+  if (!meta) return alert('정보를 불러오지 못했습니다');
+  playlists[currentPlaylistIndex].songs.push({ id, ...meta });
+  input.value = '';
+  savePlaylists();
+}
+
+function renderSongs() {
+  const ul = document.getElementById('playlist');
+  ul.innerHTML = '';
+  playlists[currentPlaylistIndex].songs.forEach((s, i) => {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <input type="checkbox" class="song-checkbox" data-index="${i}">
+      <img class="thumbnail" src="${s.thumb}">
+      <span class="song-title" onclick="openInNewTab('${s.id}')">${s.title}</span>
+      <button onclick="removeSong(${i})">🗑</button>`;
+    ul.appendChild(li);
+  });
+}
+
+function openInNewTab(id) {
+  window.open(`https://www.youtube.com/watch?v=${id}`, '_blank');
+}
+
+function removeSong(index) {
+  playlists[currentPlaylistIndex].songs.splice(index, 1);
+  savePlaylists();
+}
+
+function selectAll(state) {
+  document.querySelectorAll('.song-checkbox').forEach(cb => cb.checked = state);
+}
+
+function extractVideoId(input) {
+  input = input.trim();
+  if (/^[\w-]{11}$/.test(input)) return input;
+  try {
+    const url = new URL(input);
+    return url.hostname.includes('youtu.be') ? url.pathname.slice(1) : url.searchParams.get('v');
+  } catch (e) { return null; }
+}
+
+async function getYoutubeMeta(id) {
+  const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${id}&key=AIzaSyD5XkEw4xe9tN0b2pzU2lgiBap72NXiyYM`);
+  const data = await res.json();
+  const item = data.items?.[0];
+  return item ? { title: item.snippet.title, thumb: item.snippet.thumbnails.default.url } : null;
+}
+
+function playSelected() {
+  playingList = [];
+  document.querySelectorAll('.song-checkbox').forEach(cb => {
+    if (cb.checked) playingList.push(playlists[currentPlaylistIndex].songs[cb.dataset.index]);
+  });
+  if (playingList.length === 0) return alert('곡을 선택하세요');
+  repeatLimit = parseInt(document.getElementById('repeatCount').value, 10) || 1;
+  currentRepeat = 0;
+  currentPlayIndex = 0;
+  loadPlayer();
+}
+
+function loadPlayer() {
+  if (player) player.loadVideoById(playingList[currentPlayIndex].id);
+  else {
+    player = new YT.Player('player', {
+      height: '360', width: '640',
+      videoId: playingList[currentPlayIndex].id,
+      events: {
+        onReady: e => e.target.playVideo(),
+        onStateChange: onPlayerStateChange
+      }
+    });
+  }
+  updateTitle();
+  isPlaying = true;
+  document.getElementById('playPauseBtn').textContent = '⏸ 일시정지';
+}
+
+function onPlayerStateChange(e) {
+  if (e.data === YT.PlayerState.ENDED) {
+    currentPlayIndex++;
+    if (currentPlayIndex >= playingList.length) {
+      currentRepeat++;
+      if (currentRepeat < repeatLimit) {
+        currentPlayIndex = 0;
+      } else {
+        return;
+      }
+    }
+    loadPlayer();
+  }
+}
+
+function updateTitle() {
+  document.getElementById('currentSongTitle').textContent = playingList[currentPlayIndex]?.title || '';
+}
+
+function prevSong() {
+  if (currentPlayIndex > 0) {
+    currentPlayIndex--;
+    loadPlayer();
+  }
+}
+
+function nextSong() {
+  if (currentPlayIndex < playingList.length - 1) {
+    currentPlayIndex++;
+    loadPlayer();
+  }
+}
+
+function togglePlayPause() {
+  if (!player) return;
+  if (isPlaying) {
+    player.pauseVideo();
+    document.getElementById('playPauseBtn').textContent = '⏵ 재생';
+  } else {
+    player.playVideo();
+    document.getElementById('playPauseBtn').textContent = '⏸ 일시정지';
+  }
+  isPlaying = !isPlaying;
+}
+
+function onYouTubeIframeAPIReady() { renderPlaylistSelect(); renderSongs(); }
+
+const tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+document.head.appendChild(tag);
+</script>
+
+</body>
+</html>
