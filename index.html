@@ -15,9 +15,7 @@
       margin: 5px 0;
       font-size: 16px;
     }
-    .hidden {
-      display: none;
-    }
+    .hidden { display: none; }
     .section {
       margin: 20px 0;
       padding: 20px;
@@ -231,9 +229,25 @@
         <input type="checkbox" class="song-checkbox" data-index="${i}">
         <img class="thumbnail" src="${s.thumb}">
         <span class="song-title" onclick="openInNewTab('${s.id}')">${s.title}</span>
+        <button onclick="moveSongUp(${i})">⬆</button>
+        <button onclick="moveSongDown(${i})">⬇</button>
         <button onclick="removeSong(${i})">🗑</button>`;
       ul.appendChild(li);
     });
+  }
+
+  function moveSongUp(index) {
+    if (index === 0) return;
+    const songs = playlists[currentPlaylistIndex].songs;
+    [songs[index - 1], songs[index]] = [songs[index], songs[index - 1]];
+    savePlaylists();
+  }
+
+  function moveSongDown(index) {
+    const songs = playlists[currentPlaylistIndex].songs;
+    if (index === songs.length - 1) return;
+    [songs[index], songs[index + 1]] = [songs[index + 1], songs[index]];
+    savePlaylists();
   }
 
   function openInNewTab(id) {
