@@ -1,286 +1,351 @@
-<!-- index.html (GitHub Pages용) -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🎵 유튜브 음악 플레이리스트</title>
+  <meta charset="UTF-8">
+  <title>🎵 유튜브 플레이리스트 로그인</title>
   <style>
-    body { font-family: sans-serif; margin: 0; padding: 20px; max-width: 600px; margin: auto; }
-    input, button, select { padding: 10px; margin: 5px 0; font-size: 16px; width: 100%; box-sizing: border-box; }
-    .hidden { display: none; }
-    .container { padding: 20px; }
-    .title { text-align: center; margin-bottom: 20px; }
-    li { list-style: none; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; display: flex; align-items: center; gap: 10px; }
-    img.thumbnail { width: 80px; height: 45px; object-fit: cover; border-radius: 4px; }
-    .song-title { flex-grow: 1; color: blue; cursor: pointer; text-decoration: underline; }
-    #playerContainer { text-align: center; margin-top: 20px; }
-    #currentSongTitle { font-weight: bold; margin-top: 10px; min-height: 1.5em; }
+    body {
+      font-family: sans-serif;
+      margin: 40px auto;
+      padding: 20px;
+      width: 800px;
+    }
+    input, button, select {
+      padding: 10px;
+      margin: 5px 0;
+      font-size: 16px;
+    }
+    .hidden {
+      display: none;
+    }
+    .section {
+      margin: 20px 0;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    li {
+      background: #f9f9f9;
+      margin: 8px 0;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      gap: 10px;
+    }
+    .song-title {
+      flex-grow: 1;
+      color: blue;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    img.thumbnail {
+      width: 80px;
+      height: 45px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    #playerContainer {
+      text-align: center;
+      margin-top: 20px;
+    }
+    #currentSongTitle {
+      font-weight: bold;
+      margin-top: 10px;
+      min-height: 1.5em;
+    }
   </style>
 </head>
 <body>
 
-<div id="loginPage" class="container">
-  <h2 class="title">🔐 로그인</h2>
-  <input type="text" id="loginId" placeholder="아이디" />
-  <input type="password" id="loginPw" placeholder="비밀번호" />
-  <button onclick="login()">로그인</button>
-  <hr/>
-  <h3>📌 회원가입</h3>
-  <input type="text" id="regId" placeholder="새 아이디" />
-  <input type="password" id="regPw" placeholder="새 비밀번호" />
-  <button onclick="register()">회원가입</button>
+<!-- 로그인/회원가입 페이지 -->
+<div id="authPage">
+  <h2>🔐 로그인</h2>
+  <div class="section">
+    <input type="text" id="loginId" placeholder="아이디">
+    <input type="password" id="loginPw" placeholder="비밀번호">
+    <button onclick="login()">로그인</button>
+  </div>
+
+  <h2>📝 회원가입</h2>
+  <div class="section">
+    <input type="text" id="registerId" placeholder="아이디">
+    <input type="password" id="registerPw" placeholder="비밀번호">
+    <button onclick="register()">회원가입</button>
+  </div>
 </div>
 
-<div id="mainPage" class="container hidden">
-  <h2 class="title">🎵 나의 플레이리스트</h2>
+<!-- 플레이리스트 페이지 -->
+<div id="mainPage" class="hidden">
+  <h2>🎵 유튜브 플레이리스트</h2>
+
   <div>
     <select id="playlistSelect"></select>
-    <input type="text" id="newPlaylistName" placeholder="새 이름"/>
+    <input type="text" id="newPlaylistName" placeholder="새 플레이리스트 이름">
     <button onclick="createPlaylist()">➕ 생성</button>
     <button onclick="deletePlaylist()">🗑 삭제</button>
     <span id="playlistTitleDisplay"></span>
     <button onclick="editTitle()">✏️ 수정</button>
   </div>
-  <input type="text" id="urlInput" placeholder="유튜브 링크 또는 ID" />
+
+  <input type="text" id="urlInput" placeholder="유튜브 링크 또는 ID 입력">
   <button onclick="addSong()">🎶 추가</button>
+  <button onclick="selectAll(true)">☑ 전체 선택</button>
+  <button onclick="selectAll(false)">☐ 전체 해제</button>
+  <input type="number" id="repeatCount" min="1" value="1" style="width: 80px;">회 반복
+  <button onclick="playSelected()">▶ 선택 재생</button>
+
   <ul id="playlist"></ul>
-  <div>
-    <input type="number" id="repeatCount" value="1" min="1"/> 회 반복
-    <button onclick="playSelected()">▶ 선택 재생</button>
-  </div>
+
   <div id="playerContainer">
     <div id="player"></div>
     <div id="currentSongTitle"></div>
-    <button onclick="prevSong()">⏮ 이전</button>
-    <button onclick="togglePlayPause()" id="playPauseBtn">⏵ 재생</button>
-    <button onclick="nextSong()">⏭ 다음</button>
+    <div>
+      <button onclick="prevSong()">⏮ 이전곡</button>
+      <button onclick="togglePlayPause()" id="playPauseBtn">⏵ 재생</button>
+      <button onclick="nextSong()">⏭ 다음곡</button>
+    </div>
   </div>
   <button onclick="logout()">🚪 로그아웃</button>
 </div>
 
 <script>
-const users = JSON.parse(localStorage.getItem('users') || '{}');
-let currentUser = localStorage.getItem('currentUser');
-let playlists = [], currentPlaylistIndex = 0;
-let playingList = [], currentPlayIndex = 0;
-let player, isPlaying = false;
-let repeatLimit = 1, currentRepeat = 0;
+  const users = JSON.parse(localStorage.getItem('users') || '{}');
+  let currentUser = localStorage.getItem('currentUser');
+  let playlists = [], currentPlaylistIndex = 0;
+  let playingList = [], currentPlayIndex = 0;
+  let player, isPlaying = false;
+  let repeatLimit = 1, currentRepeat = 0;
 
-function savePlaylists() {
-  localStorage.setItem(`playlists_${currentUser}`, JSON.stringify(playlists));
-  renderPlaylistSelect();
-  renderSongs();
-}
+  window.onload = () => {
+    if (currentUser) {
+      document.getElementById('authPage').classList.add('hidden');
+      document.getElementById('mainPage').classList.remove('hidden');
+      loadPlaylists();
+    }
+  }
 
-function loadPlaylists() {
-  playlists = JSON.parse(localStorage.getItem(`playlists_${currentUser}`) || '[]');
-  renderPlaylistSelect();
-  renderSongs();
-}
+  function register() {
+    const id = document.getElementById('registerId').value.trim();
+    const pw = document.getElementById('registerPw').value;
+    if (!id || !pw) return alert('아이디와 비밀번호를 입력하세요.');
+    if (users[id]) return alert('이미 존재하는 아이디입니다.');
+    users[id] = pw;
+    localStorage.setItem('users', JSON.stringify(users));
+    alert('회원가입 완료!');
+    document.getElementById('registerId').value = '';
+    document.getElementById('registerPw').value = '';
+  }
 
-function register() {
-  const id = document.getElementById('regId').value;
-  const pw = document.getElementById('regPw').value;
-  if (users[id]) return alert('이미 존재하는 아이디입니다');
-  users[id] = pw;
-  localStorage.setItem('users', JSON.stringify(users));
-  alert('회원가입 완료!');
-}
+  function login() {
+    const id = document.getElementById('loginId').value.trim();
+    const pw = document.getElementById('loginPw').value;
+    if (users[id] === pw) {
+      localStorage.setItem('currentUser', id);
+      location.reload();
+    } else {
+      alert('아이디 또는 비밀번호가 틀립니다.');
+    }
+  }
 
-function login() {
-  const id = document.getElementById('loginId').value;
-  const pw = document.getElementById('loginPw').value;
-  if (users[id] === pw) {
-    localStorage.setItem('currentUser', id);
+  function logout() {
+    localStorage.removeItem('currentUser');
     location.reload();
-  } else {
-    alert('로그인 실패');
   }
-}
 
-function logout() {
-  localStorage.removeItem('currentUser');
-  location.reload();
-}
+  function savePlaylists() {
+    localStorage.setItem(`playlists_${currentUser}`, JSON.stringify(playlists));
+    renderPlaylistSelect();
+    renderSongs();
+  }
 
-function renderPlaylistSelect() {
-  const select = document.getElementById('playlistSelect');
-  select.innerHTML = '';
-  playlists.forEach((p, i) => {
-    const opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = p.title;
-    select.appendChild(opt);
-  });
-  select.value = currentPlaylistIndex;
-  document.getElementById('playlistTitleDisplay').textContent = `[→ ${playlists[currentPlaylistIndex]?.title || ''}]`;
-}
+  function loadPlaylists() {
+    playlists = JSON.parse(localStorage.getItem(`playlists_${currentUser}`) || '[]');
+    renderPlaylistSelect();
+    renderSongs();
+  }
 
-function createPlaylist() {
-  const name = document.getElementById('newPlaylistName').value.trim();
-  if (!name) return alert('이름을 입력하세요');
-  playlists.push({ title: name, songs: [] });
-  currentPlaylistIndex = playlists.length - 1;
-  savePlaylists();
-}
+  function renderPlaylistSelect() {
+    const select = document.getElementById('playlistSelect');
+    select.innerHTML = '';
+    playlists.forEach((p, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = p.title;
+      select.appendChild(opt);
+    });
+    select.value = currentPlaylistIndex;
+    document.getElementById('playlistTitleDisplay').textContent = `[→ ${playlists[currentPlaylistIndex]?.title || ''}]`;
+  }
 
-function deletePlaylist() {
-  if (playlists.length <= 1) return alert('최소 하나는 남겨야 합니다');
-  if (confirm('정말 삭제할까요?')) {
-    playlists.splice(currentPlaylistIndex, 1);
-    currentPlaylistIndex = 0;
+  function createPlaylist() {
+    const name = document.getElementById('newPlaylistName').value.trim();
+    if (!name) return alert('이름을 입력하세요');
+    playlists.push({ title: name, songs: [] });
+    currentPlaylistIndex = playlists.length - 1;
+    document.getElementById('newPlaylistName').value = '';
     savePlaylists();
   }
-}
 
-function editTitle() {
-  const newTitle = prompt('새 제목:', playlists[currentPlaylistIndex].title);
-  if (newTitle) {
-    playlists[currentPlaylistIndex].title = newTitle;
+  function deletePlaylist() {
+    if (playlists.length <= 1) return alert('최소 하나는 남겨야 합니다');
+    if (confirm('정말 삭제할까요?')) {
+      playlists.splice(currentPlaylistIndex, 1);
+      currentPlaylistIndex = 0;
+      savePlaylists();
+    }
+  }
+
+  function editTitle() {
+    const newTitle = prompt('새 제목:', playlists[currentPlaylistIndex].title);
+    if (newTitle) {
+      playlists[currentPlaylistIndex].title = newTitle;
+      savePlaylists();
+    }
+  }
+
+  document.getElementById('playlistSelect').onchange = (e) => {
+    currentPlaylistIndex = parseInt(e.target.value);
+    renderPlaylistSelect();
+    renderSongs();
+  };
+
+  async function addSong() {
+    const input = document.getElementById('urlInput');
+    const id = extractVideoId(input.value);
+    if (!id) return alert('잘못된 링크입니다');
+    const meta = await getYoutubeMeta(id);
+    if (!meta) return alert('정보를 불러오지 못했습니다');
+    playlists[currentPlaylistIndex].songs.push({ id, ...meta });
+    input.value = '';
     savePlaylists();
   }
-}
 
-document.getElementById('playlistSelect').onchange = e => {
-  currentPlaylistIndex = parseInt(e.target.value);
-  renderPlaylistSelect();
-  renderSongs();
-};
-
-async function addSong() {
-  const input = document.getElementById('urlInput');
-  const id = extractVideoId(input.value);
-  if (!id) return alert('링크가 잘못되었습니다');
-  const meta = await getYoutubeMeta(id);
-  if (!meta) return alert('정보를 불러올 수 없습니다');
-  playlists[currentPlaylistIndex].songs.push({ id, ...meta });
-  input.value = '';
-  savePlaylists();
-}
-
-function renderSongs() {
-  const ul = document.getElementById('playlist');
-  ul.innerHTML = '';
-  playlists[currentPlaylistIndex]?.songs.forEach((s, i) => {
-    const li = document.createElement('li');
-    li.innerHTML = `
-      <input type="checkbox" class="song-checkbox" data-index="${i}">
-      <img class="thumbnail" src="${s.thumb}">
-      <span class="song-title" onclick="openInNewTab('${s.id}')">${s.title}</span>
-      <button onclick="removeSong(${i})">🗑</button>`;
-    ul.appendChild(li);
-  });
-}
-
-function openInNewTab(id) {
-  window.open(`https://www.youtube.com/watch?v=${id}`, '_blank');
-}
-
-function removeSong(index) {
-  playlists[currentPlaylistIndex].songs.splice(index, 1);
-  savePlaylists();
-}
-
-function extractVideoId(input) {
-  input = input.trim();
-  if (/^[\w-]{11}$/.test(input)) return input;
-  try {
-    const url = new URL(input);
-    return url.hostname.includes('youtu.be') ? url.pathname.slice(1) : url.searchParams.get('v');
-  } catch {
-    return null;
-  }
-}
-
-async function getYoutubeMeta(id) {
-  const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${id}&key=AIzaSyD5XkEw4xe9tN0b2pzU2lgiBap72NXiyYM`);
-  const data = await res.json();
-  const item = data.items?.[0];
-  return item ? { title: item.snippet.title, thumb: item.snippet.thumbnails.default.url } : null;
-}
-
-function playSelected() {
-  playingList = [];
-  document.querySelectorAll('.song-checkbox').forEach(cb => {
-    if (cb.checked) playingList.push(playlists[currentPlaylistIndex].songs[cb.dataset.index]);
-  });
-  if (playingList.length === 0) return alert('곡을 선택하세요');
-  repeatLimit = parseInt(document.getElementById('repeatCount').value, 10) || 1;
-  currentRepeat = 0;
-  currentPlayIndex = 0;
-  loadPlayer();
-}
-
-function loadPlayer() {
-  if (player) player.loadVideoById(playingList[currentPlayIndex].id);
-  else {
-    player = new YT.Player('player', {
-      height: '200', width: '100%',
-      videoId: playingList[currentPlayIndex].id,
-      events: {
-        onReady: e => e.target.playVideo(),
-        onStateChange: onPlayerStateChange
-      }
+  function renderSongs() {
+    const ul = document.getElementById('playlist');
+    ul.innerHTML = '';
+    playlists[currentPlaylistIndex].songs.forEach((s, i) => {
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <input type="checkbox" class="song-checkbox" data-index="${i}">
+        <img class="thumbnail" src="${s.thumb}">
+        <span class="song-title" onclick="openInNewTab('${s.id}')">${s.title}</span>
+        <button onclick="removeSong(${i})">🗑</button>`;
+      ul.appendChild(li);
     });
   }
-  updateTitle();
-  isPlaying = true;
-  document.getElementById('playPauseBtn').textContent = '⏸ 일시정지';
-}
 
-function onPlayerStateChange(e) {
-  if (e.data === YT.PlayerState.ENDED) {
-    currentPlayIndex++;
-    if (currentPlayIndex >= playingList.length) {
-      currentRepeat++;
-      if (currentRepeat < repeatLimit) currentPlayIndex = 0;
-      else return;
+  function openInNewTab(id) {
+    window.open(`https://www.youtube.com/watch?v=${id}`, '_blank');
+  }
+
+  function removeSong(index) {
+    playlists[currentPlaylistIndex].songs.splice(index, 1);
+    savePlaylists();
+  }
+
+  function selectAll(state) {
+    document.querySelectorAll('.song-checkbox').forEach(cb => cb.checked = state);
+  }
+
+  function extractVideoId(input) {
+    input = input.trim();
+    if (/^[\w-]{11}$/.test(input)) return input;
+    try {
+      const url = new URL(input);
+      return url.hostname.includes('youtu.be') ? url.pathname.slice(1) : url.searchParams.get('v');
+    } catch (e) { return null; }
+  }
+
+  async function getYoutubeMeta(id) {
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${id}&key=AIzaSyD5XkEw4xe9tN0b2pzU2lgiBap72NXiyYM`);
+    const data = await res.json();
+    const item = data.items?.[0];
+    return item ? { title: item.snippet.title, thumb: item.snippet.thumbnails.default.url } : null;
+  }
+
+  function playSelected() {
+    playingList = [];
+    document.querySelectorAll('.song-checkbox').forEach(cb => {
+      if (cb.checked) playingList.push(playlists[currentPlaylistIndex].songs[cb.dataset.index]);
+    });
+    if (playingList.length === 0) return alert('곡을 선택하세요');
+    repeatLimit = parseInt(document.getElementById('repeatCount').value, 10) || 1;
+    currentRepeat = 0;
+    currentPlayIndex = 0;
+    loadPlayer();
+  }
+
+  function loadPlayer() {
+    if (player) player.loadVideoById(playingList[currentPlayIndex].id);
+    else {
+      player = new YT.Player('player', {
+        height: '360', width: '640',
+        videoId: playingList[currentPlayIndex].id,
+        events: {
+          onReady: e => e.target.playVideo(),
+          onStateChange: onPlayerStateChange
+        }
+      });
     }
-    loadPlayer();
-  }
-}
-
-function updateTitle() {
-  document.getElementById('currentSongTitle').textContent = playingList[currentPlayIndex]?.title || '';
-}
-
-function prevSong() {
-  if (currentPlayIndex > 0) {
-    currentPlayIndex--;
-    loadPlayer();
-  }
-}
-
-function nextSong() {
-  if (currentPlayIndex < playingList.length - 1) {
-    currentPlayIndex++;
-    loadPlayer();
-  }
-}
-
-function togglePlayPause() {
-  if (!player) return;
-  if (isPlaying) {
-    player.pauseVideo();
-    document.getElementById('playPauseBtn').textContent = '⏵ 재생';
-  } else {
-    player.playVideo();
+    updateTitle();
+    isPlaying = true;
     document.getElementById('playPauseBtn').textContent = '⏸ 일시정지';
   }
-  isPlaying = !isPlaying;
-}
 
-function onYouTubeIframeAPIReady() {
-  if (currentUser) {
-    document.getElementById('loginPage').classList.add('hidden');
-    document.getElementById('mainPage').classList.remove('hidden');
-    loadPlaylists();
+  function onPlayerStateChange(e) {
+    if (e.data === YT.PlayerState.ENDED) {
+      currentPlayIndex++;
+      if (currentPlayIndex >= playingList.length) {
+        currentRepeat++;
+        if (currentRepeat < repeatLimit) currentPlayIndex = 0;
+        else return;
+      }
+      loadPlayer();
+    }
   }
-}
-const tag = document.createElement('script');
-tag.src = "https://www.youtube.com/iframe_api";
-document.head.appendChild(tag);
+
+  function updateTitle() {
+    document.getElementById('currentSongTitle').textContent = playingList[currentPlayIndex]?.title || '';
+  }
+
+  function prevSong() {
+    if (currentPlayIndex > 0) {
+      currentPlayIndex--;
+      loadPlayer();
+    }
+  }
+
+  function nextSong() {
+    if (currentPlayIndex < playingList.length - 1) {
+      currentPlayIndex++;
+      loadPlayer();
+    }
+  }
+
+  function togglePlayPause() {
+    if (!player) return;
+    if (isPlaying) {
+      player.pauseVideo();
+      document.getElementById('playPauseBtn').textContent = '⏵ 재생';
+    } else {
+      player.playVideo();
+      document.getElementById('playPauseBtn').textContent = '⏸ 일시정지';
+    }
+    isPlaying = !isPlaying;
+  }
+
+  function onYouTubeIframeAPIReady() {
+    if (currentUser) {
+      loadPlaylists();
+    }
+  }
+
+  const tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/iframe_api";
+  document.head.appendChild(tag);
 </script>
+
 </body>
 </html>
