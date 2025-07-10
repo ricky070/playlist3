@@ -1,63 +1,107 @@
+<!-- index.html (GitHub Pages용) -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>🎵 페이지 내 유튜브 플레이리스트</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🎵 유튜브 음악 플레이리스트</title>
   <style>
-    body { font-family: sans-serif; max-width: 900px; margin: 20px auto; }
-    input, button, select { padding: 8px; margin: 5px; font-size: 16px; }
-    ul { list-style: none; padding: 0; }
-    li { background: #f9f9f9; margin: 8px 0; padding: 8px; display: flex; align-items: center; border: 1px solid #ccc; border-radius: 6px; gap: 10px; }
-    .song-title { flex-grow: 1; color: blue; cursor: pointer; text-decoration: underline; }
+    body { font-family: sans-serif; margin: 0; padding: 20px; max-width: 600px; margin: auto; }
+    input, button, select { padding: 10px; margin: 5px 0; font-size: 16px; width: 100%; box-sizing: border-box; }
+    .hidden { display: none; }
+    .container { padding: 20px; }
+    .title { text-align: center; margin-bottom: 20px; }
+    li { list-style: none; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; display: flex; align-items: center; gap: 10px; }
     img.thumbnail { width: 80px; height: 45px; object-fit: cover; border-radius: 4px; }
-    .controls button { margin-left: 4px; }
+    .song-title { flex-grow: 1; color: blue; cursor: pointer; text-decoration: underline; }
     #playerContainer { text-align: center; margin-top: 20px; }
     #currentSongTitle { font-weight: bold; margin-top: 10px; min-height: 1.5em; }
-    #playlistHeader { display: flex; align-items: center; gap: 10px; }
   </style>
 </head>
 <body>
-  <h2>🎵 페이지 내 유튜브 플레이리스트</h2>
 
-  <div id="playlistHeader">
+<div id="loginPage" class="container">
+  <h2 class="title">🔐 로그인</h2>
+  <input type="text" id="loginId" placeholder="아이디" />
+  <input type="password" id="loginPw" placeholder="비밀번호" />
+  <button onclick="login()">로그인</button>
+  <hr/>
+  <h3>📌 회원가입</h3>
+  <input type="text" id="regId" placeholder="새 아이디" />
+  <input type="password" id="regPw" placeholder="새 비밀번호" />
+  <button onclick="register()">회원가입</button>
+</div>
+
+<div id="mainPage" class="container hidden">
+  <h2 class="title">🎵 나의 플레이리스트</h2>
+  <div>
     <select id="playlistSelect"></select>
-    <input type="text" id="newPlaylistName" placeholder="새 플레이리스트 이름">
+    <input type="text" id="newPlaylistName" placeholder="새 이름"/>
     <button onclick="createPlaylist()">➕ 생성</button>
     <button onclick="deletePlaylist()">🗑 삭제</button>
     <span id="playlistTitleDisplay"></span>
     <button onclick="editTitle()">✏️ 수정</button>
   </div>
-
-  <input type="text" id="urlInput" placeholder="유튜브 링크 또는 ID 입력" style="width: 100%;">
+  <input type="text" id="urlInput" placeholder="유튜브 링크 또는 ID" />
   <button onclick="addSong()">🎶 추가</button>
-  <button onclick="selectAll(true)">☑ 전체 선택</button>
-  <button onclick="selectAll(false)">☐ 전체 해제</button>
-  <input type="number" id="repeatCount" min="1" value="1" style="width: 80px;">회 반복
-  <button onclick="playSelected()">▶ 선택 재생</button>
-
   <ul id="playlist"></ul>
-
+  <div>
+    <input type="number" id="repeatCount" value="1" min="1"/> 회 반복
+    <button onclick="playSelected()">▶ 선택 재생</button>
+  </div>
   <div id="playerContainer">
     <div id="player"></div>
     <div id="currentSongTitle"></div>
-    <div>
-      <button onclick="prevSong()">⏮ 이전곡</button>
-      <button onclick="togglePlayPause()" id="playPauseBtn">⏵ 재생</button>
-      <button onclick="nextSong()">⏭ 다음곡</button>
-    </div>
+    <button onclick="prevSong()">⏮ 이전</button>
+    <button onclick="togglePlayPause()" id="playPauseBtn">⏵ 재생</button>
+    <button onclick="nextSong()">⏭ 다음</button>
   </div>
+  <button onclick="logout()">🚪 로그아웃</button>
+</div>
 
 <script>
-let playlists = JSON.parse(localStorage.getItem('playlists') || '[]');
-let currentPlaylistIndex = 0;
+const users = JSON.parse(localStorage.getItem('users') || '{}');
+let currentUser = localStorage.getItem('currentUser');
+let playlists = [], currentPlaylistIndex = 0;
 let playingList = [], currentPlayIndex = 0;
 let player, isPlaying = false;
 let repeatLimit = 1, currentRepeat = 0;
 
 function savePlaylists() {
-  localStorage.setItem('playlists', JSON.stringify(playlists));
+  localStorage.setItem(`playlists_${currentUser}`, JSON.stringify(playlists));
   renderPlaylistSelect();
   renderSongs();
+}
+
+function loadPlaylists() {
+  playlists = JSON.parse(localStorage.getItem(`playlists_${currentUser}`) || '[]');
+  renderPlaylistSelect();
+  renderSongs();
+}
+
+function register() {
+  const id = document.getElementById('regId').value;
+  const pw = document.getElementById('regPw').value;
+  if (users[id]) return alert('이미 존재하는 아이디입니다');
+  users[id] = pw;
+  localStorage.setItem('users', JSON.stringify(users));
+  alert('회원가입 완료!');
+}
+
+function login() {
+  const id = document.getElementById('loginId').value;
+  const pw = document.getElementById('loginPw').value;
+  if (users[id] === pw) {
+    localStorage.setItem('currentUser', id);
+    location.reload();
+  } else {
+    alert('로그인 실패');
+  }
+}
+
+function logout() {
+  localStorage.removeItem('currentUser');
+  location.reload();
 }
 
 function renderPlaylistSelect() {
@@ -78,7 +122,6 @@ function createPlaylist() {
   if (!name) return alert('이름을 입력하세요');
   playlists.push({ title: name, songs: [] });
   currentPlaylistIndex = playlists.length - 1;
-  document.getElementById('newPlaylistName').value = '';
   savePlaylists();
 }
 
@@ -99,7 +142,7 @@ function editTitle() {
   }
 }
 
-document.getElementById('playlistSelect').onchange = (e) => {
+document.getElementById('playlistSelect').onchange = e => {
   currentPlaylistIndex = parseInt(e.target.value);
   renderPlaylistSelect();
   renderSongs();
@@ -108,9 +151,9 @@ document.getElementById('playlistSelect').onchange = (e) => {
 async function addSong() {
   const input = document.getElementById('urlInput');
   const id = extractVideoId(input.value);
-  if (!id) return alert('잘못된 링크입니다');
+  if (!id) return alert('링크가 잘못되었습니다');
   const meta = await getYoutubeMeta(id);
-  if (!meta) return alert('정보를 불러오지 못했습니다');
+  if (!meta) return alert('정보를 불러올 수 없습니다');
   playlists[currentPlaylistIndex].songs.push({ id, ...meta });
   input.value = '';
   savePlaylists();
@@ -119,7 +162,7 @@ async function addSong() {
 function renderSongs() {
   const ul = document.getElementById('playlist');
   ul.innerHTML = '';
-  playlists[currentPlaylistIndex].songs.forEach((s, i) => {
+  playlists[currentPlaylistIndex]?.songs.forEach((s, i) => {
     const li = document.createElement('li');
     li.innerHTML = `
       <input type="checkbox" class="song-checkbox" data-index="${i}">
@@ -139,17 +182,15 @@ function removeSong(index) {
   savePlaylists();
 }
 
-function selectAll(state) {
-  document.querySelectorAll('.song-checkbox').forEach(cb => cb.checked = state);
-}
-
 function extractVideoId(input) {
   input = input.trim();
   if (/^[\w-]{11}$/.test(input)) return input;
   try {
     const url = new URL(input);
     return url.hostname.includes('youtu.be') ? url.pathname.slice(1) : url.searchParams.get('v');
-  } catch (e) { return null; }
+  } catch {
+    return null;
+  }
 }
 
 async function getYoutubeMeta(id) {
@@ -175,7 +216,7 @@ function loadPlayer() {
   if (player) player.loadVideoById(playingList[currentPlayIndex].id);
   else {
     player = new YT.Player('player', {
-      height: '360', width: '640',
+      height: '200', width: '100%',
       videoId: playingList[currentPlayIndex].id,
       events: {
         onReady: e => e.target.playVideo(),
@@ -193,11 +234,8 @@ function onPlayerStateChange(e) {
     currentPlayIndex++;
     if (currentPlayIndex >= playingList.length) {
       currentRepeat++;
-      if (currentRepeat < repeatLimit) {
-        currentPlayIndex = 0;
-      } else {
-        return;
-      }
+      if (currentRepeat < repeatLimit) currentPlayIndex = 0;
+      else return;
     }
     loadPlayer();
   }
@@ -233,12 +271,16 @@ function togglePlayPause() {
   isPlaying = !isPlaying;
 }
 
-function onYouTubeIframeAPIReady() { renderPlaylistSelect(); renderSongs(); }
-
+function onYouTubeIframeAPIReady() {
+  if (currentUser) {
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('mainPage').classList.remove('hidden');
+    loadPlaylists();
+  }
+}
 const tag = document.createElement('script');
 tag.src = "https://www.youtube.com/iframe_api";
 document.head.appendChild(tag);
 </script>
-
 </body>
 </html>
